@@ -1,11 +1,32 @@
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <WiFi.h>
+
 #include "Wire.h"
+
 #include "SSD1306.h"
+
+#include <string.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+#include "esp_system.h"
+#include "esp_wifi.h"
+#include "esp_event_loop.h"
+#include "esp_log.h"
+#include "nvs_flash.h"
+
 #include "driver/gpio.h"
 #include "driver/adc.h"
 #include "esp_adc_cal.h"
+
+#include "lwip/err.h"
+#include "lwip/sockets.h"
+#include "lwip/sys.h"
+#include <lwip/netdb.h>
+
 
 #define SERIAL_SPEED 115200
 #define BUTTON_GPIO 4
@@ -27,22 +48,173 @@
 #define ATTEN ADC_ATTEN_MAX
 #define UNIT ADC_UNIT_1
 
-WiFiClient client;
+//WiFiClient client;
 
 static esp_adc_cal_characteristics_t *adc_chars;
 
 hw_timer_t *timer = NULL;
 bool isRecording = false;
+bool connectionInProgress = false;
 uint8_t buffer[BUFFER_SIZE];
 int bufferIndex = 0;
 
 SSD1306 display(0x3c, 21, 22);
+
+
+//WiFI
+//-------------------------------------
+#define HOST_IP_ADDR "46.101.116.209"
+#define PORT 8086
+
+const int IPV4_GOTIP_BIT = BIT0;
+
+/* FreeRTOS event group to signal when we are connected & ready to make a request */
+static EventGroupHandle_t wifi_event_group;
+
+static esp_err_t event_handler(void *ctx, system_event_t *event)
+{
+    switch (event->event_id) {
+    case SYSTEM_EVENT_STA_START:
+        esp_wifi_connect();
+        ESP_LOGI(TAG, "SYSTEM_EVENT_STA_START");
+        break;
+    case SYSTEM_EVENT_STA_CONNECTED:
+        /* enable ipv6 */
+        tcpip_adapter_create_ip6_linklocal(TCPIP_ADAPTER_IF_STA);
+        break;
+    case SYSTEM_EVENT_STA_GOT_IP:
+        xEventGroupSetBits(wifi_event_group, IPV4_GOTIP_BIT);
+        ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP");
+        break;
+    case SYSTEM_EVENT_STA_DISCONNECTED:
+        /* This is a workaround as ESP32 WiFi libs don't currently auto-reassociate. */
+        esp_wifi_connect();
+        xEventGroupClearBits(wifi_event_group, IPV4_GOTIP_BIT);
+       // xEventGroupClearBits(wifi_event_group, IPV6_GOTIP_BIT);
+        break;
+    default:
+        break;
+    }
+    return ESP_OK;
+}
+
+static void initialise_wifi(void)
+{
+    tcpip_adapter_init();
+    wifi_event_group = xEventGroupCreate();
+    ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
+    ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
+    wifi_config_t wifi_config = {
+        .sta = {
+            {.ssid = WIFI_SSID},
+            {.password = WIFI_PASS},
+        },
+    };
+    Serial.println("Setting WiFi configuration SSID ");
+    ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
+    ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
+    ESP_ERROR_CHECK( esp_wifi_start() );
+};
+
+static void tcp_client_task(void *pvParameters)
+{
+    connectionInProgress = true;
+
+    char rx_buffer[128];
+    char addr_str[128];
+    int addr_family;
+    int ip_protocol;
+
+    char *payload = "Message from ESP32 ";
+
+    struct sockaddr_in destAddr;
+    destAddr.sin_addr.s_addr = inet_addr(HOST_IP_ADDR);
+    destAddr.sin_family = AF_INET;
+    destAddr.sin_port = htons(PORT);
+    addr_family = AF_INET;
+    ip_protocol = IPPROTO_IP;
+    inet_ntoa_r(destAddr.sin_addr, addr_str, sizeof(addr_str) - 1);
+
+    int sock =  socket(addr_family, SOCK_STREAM, ip_protocol);
+    if (sock < 0) {
+                Serial.println("Unable to create socket");
+
+        connectionInProgress = false;
+        //ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
+        return;
+    }
+    Serial.println("Socket created");
+
+
+    while (1) {
+        
+        //ESP_LOGI(TAG, "Socket created");
+
+        int err = connect(sock, (struct sockaddr *)&destAddr, sizeof(destAddr));
+        if (err != 0) {
+            Serial.println("Socket unable to connect");
+           // ESP_LOGE(TAG, "Socket unable to connect: errno %d", errno);
+            break;
+        }
+        Serial.println("Successfully connected");
+
+        //ESP_LOGI(TAG, "Successfully connected");
+
+        err = send(sock, buffer, BUFFER_SIZE, 0);
+
+        while (connectionInProgress) {
+            if (err < 0) {
+                Serial.println("Error occured during sending");
+
+                //ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
+                break;
+            }
+
+            int len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
+            // Error occured during receiving
+            if (len < 0) {
+                Serial.println("recv failed: errno");
+
+                //ESP_LOGE(TAG, "recv failed: errno %d", errno);
+                break;
+            }
+            // Data received
+            else {
+                rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
+                Serial.println("Received %d bytes from");
+                Serial.println(rx_buffer);
+            
+               // close(sock);
+                Serial.printf("Disconnected from %s:%d\r\n", HOST_IP_ADDR, PORT);
+                connectionInProgress = false;
+                //ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
+                //ESP_LOGI(TAG, "%s", rx_buffer);
+            }
+            bufferIndex = 0;
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
+        }
+
+        if (sock != -1) {
+            ESP_LOGE(TAG, "Shutting down socket and restarting...");
+            shutdown(sock, 0);
+            close(sock);
+        }
+    }
+    connectionInProgress = false;
+    vTaskDelete(NULL);
+}
+
+//-------------------------------------
 
 void setup()
 {
     Serial.begin(SERIAL_SPEED);
     Serial.println("-----");
 
+    initialise_wifi();
+    
     Serial.println("Configure pinmodes");
     pinMode(BUTTON_GPIO, INPUT);
     setupLCD();
@@ -50,7 +222,7 @@ void setup()
     checkEfuse();
     configureADC();
     characterizeADC();
-    connectToFIWI();
+    //connectToFIWI();
 }
 
 static void setupLCD()
@@ -122,16 +294,16 @@ static void characterizeADC()
     printCharValType(val_type);
 }
 
-static void connectToFIWI()
-{
-    Serial.printf("Connecting to %s.\r\n", WIFI_SSID);
-    WiFi.begin(WIFI_SSID, WIFI_PASS);
-    while (WiFi.status() != WL_CONNECTED)
-    {
-        delay(100);
-    }
-    Serial.printf("Connected to %s.\r\n", WIFI_SSID);
-}
+// static void connectToFIWI()
+// {
+//     Serial.printf("Connecting to %s.\r\n", WIFI_SSID);
+//     WiFi.begin(WIFI_SSID, WIFI_PASS);
+//     while (WiFi.status() != WL_CONNECTED)
+//     {
+//         delay(100);
+//     }
+//     Serial.printf("Connected to %s.\r\n", WIFI_SSID);
+// }
 
 void loop()
 {
@@ -175,22 +347,11 @@ void stopRecordFromMic()
 
 void sendAudioData()
 {
-    Serial.printf("Connecting to %s:%d\r\n", SERVER_HOST, SERVER_PORT);
-    if (client.connect(SERVER_HOST, SERVER_PORT))
-    {
-        Serial.printf("Connected to %s:%d\r\n", SERVER_HOST, SERVER_PORT);
-        Serial.printf("Sending sample, size = %d\r\n", bufferIndex);
-        client.write(buffer, BUFFER_SIZE);
-        client.stop();
-        Serial.printf("Disconnected from %s:%d\r\n", SERVER_HOST, SERVER_PORT);
-        // logFile();
-        bufferIndex = 0;
+    if (connectionInProgress == false) {
+        Serial.printf("Send audio data");
+        xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
     }
-    else
-    {
-        Serial.printf("Connecting to %s:%d failed\r\n", SERVER_HOST, SERVER_PORT);
-        client.stop();
-    }
+   
 }
 
 int16_t readMicRaw()
