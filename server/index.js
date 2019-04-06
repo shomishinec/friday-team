@@ -59,5 +59,5 @@ const server = net.createServer((socket) => {
         }
     });
 });
-server.listen(8086, "172.20.10.3");
+server.listen(8086, "46.101.116.209");
 console.log("Server started");
