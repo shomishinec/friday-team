@@ -21,18 +21,22 @@
 #include "driver/adc.h"
 #include "driver/timer.h"
 #include "driver/periph_ctrl.h"
+#include "driver/i2c.h"
 
 #include "lwip/err.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
 #include <lwip/netdb.h>
 
+#include "ssd1306.h"
+#include "fonts.h"
+#include "xi2c.h"
+
 #define BUTTON_GPIO 4
 
 #define DEFAULT_VREF 1100 // Default Voltage
 
 // WiFI
-//-------------------------------------
 #define WIFI_SSID "Grandead"
 #define WIFI_PASS "my1te2le3ccascad"
 #define HOST_IP_ADDR "172.20.10.3"
@@ -62,6 +66,15 @@ bool connectionInProgress = false;
 uint8_t buffer[BUFFER_SIZE];
 int bufferIndex = 0;
 
+// I2C
+
+#define I2C_MASTER_SCL_IO 22        /*!< gpio number for I2C master clock */
+#define I2C_MASTER_SDA_IO 21        /*!< gpio number for I2C master data  */
+#define I2C_MASTER_NUM I2C_NUM_1    /*!< I2C port number for master dev */
+#define I2C_MASTER_TX_BUF_DISABLE 0 /*!< I2C master do not need buffer */
+#define I2C_MASTER_RX_BUF_DISABLE 0 /*!< I2C master do not need buffer */
+#define I2C_MASTER_FREQ_HZ 100000   /*!< I2C master clock frequency */
+
 // headers
 
 void readMicLoop();
@@ -80,13 +93,6 @@ void initTimer()
         .callback = &readMicLoop,
         .name = "micLoopTimer"};
     esp_timer_init(timerArgs, timer);
-}
-
-// setup lcd
-
-void initLCD()
-{
-    printf("Init LCD");
 }
 
 // init NVS
@@ -225,13 +231,35 @@ void characterizeADC()
     printCharValType(val_type);
 }
 
+void initI2C()
+{
+    int i2c_master_port = I2C_MASTER_NUM;
+    i2c_config_t conf;
+    conf.mode = I2C_MODE_MASTER;
+    conf.sda_io_num = I2C_MASTER_SDA_IO;
+    conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
+    conf.scl_io_num = I2C_MASTER_SCL_IO;
+    conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
+    conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
+    i2c_param_config(i2c_master_port, &conf);
+    i2c_driver_install(i2c_master_port, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
+}
+
+void initLCD()
+{
+    SSD1306_Init();
+}
+
 // setup
 
 void init()
 {
     printf("-----\r\n");
+    printf("Init I2C\r\n");
+    initI2C();
     printf("Init LCD\r\n");
     initLCD();
+    printToLCD("Loading");
     printf("Init timer\r\n");
     initTimer();
     printf("Init NVS\n\r");
@@ -251,8 +279,7 @@ void init()
 
 void loop()
 {
-
-    vTaskDelay(250);
+    vTaskDelay(100);
     if (isRecording)
     {
         return;
@@ -448,8 +475,10 @@ int16_t readMicRaw()
 
 void printToLCD(char *message)
 {
-    printf(message);
-    printf("\r\n");
+    SSD1306_Fill(SSD1306_COLOR_BLACK);
+    SSD1306_GotoXY(5, 5);
+    SSD1306_Puts(message, &Font_11x18, SSD1306_COLOR_WHITE);
+    SSD1306_UpdateScreen();
 }
 
 // Utils
