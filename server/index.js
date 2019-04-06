@@ -11,7 +11,7 @@ const server = net.createServer((socket) => {
     const lpcmBuffer = Buffer.alloc(48000);
     socket.on("error", function (err) {
         console.error("Error: " + err);
-        socket.end(genereteResponceBuffer(false, "Error"));
+        socket.end(utils.genereteResponceBuffer(false, "Error"));
     });
     socket.on("data", (lpcmChunk) => {
         console.log("Received chunk");
@@ -43,7 +43,7 @@ const server = net.createServer((socket) => {
                     body += chunk;
                 });
                 req.on("error", (err) => {
-                    socket.end(genereteResponceBuffer(false, "Error"));
+                    socket.end(utils.genereteResponceBuffer(false, "Error"));
                     console.error("Error: " + err);
                     receiverBytes = 0;
                 });
