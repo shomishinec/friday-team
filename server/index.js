@@ -70,7 +70,7 @@ var worker = (data)=>{
     {
         console.log("I heard time or timer")
         var  timeSeconds=0;//sending in miliseconds
-        if(answerWords.includes("установи")||answerWords.includes("поставь")||answerWords.includes("запусти"))
+        if(answerWords.includes("установи")||answerWords.includes("поставь")||answerWords.includes("запусти")||answerWords.includes("ждем"))
         {   
             console.log("I heard set")
              if(answerWords.includes("час")||answerWords.includes("часа"))
@@ -93,16 +93,18 @@ var worker = (data)=>{
                 timeSeconds =+ answerWords[index]*1000;
             }
         }
+        storhouseTaskNumber = 0;
+        storehouseDemo = false;
         return genereteResponceBuffer(true, "startTimer", timeSeconds);
     }
-    if(storehouseDemo||answerWords.includes("слад")||answerWords.includes("слада")||answerWords.includes("хранилище")||answerWords.includes("сладом")){
+    if(storehouseDemo||answerWords.includes("склад")||answerWords.includes("склада")||answerWords.includes("хранилище")||answerWords.includes("складом")){
         if(!storehouseDemo)
         {
             console.log("I heard storhouse demo")
-            return genereteResponceBuffer(true, "storhouseDemo", storehouseTasks());
+            return genereteResponceBuffer(true, "storhouseDemo", "task or question");
         }
         storehouseDemo=true;
-        if(answerWords.includes("дальше")||answerWords.includes("следующая")||answerWords.includes("есть"))
+        if(answerWords.includes("дальше")||answerWords.includes("следующая")||answerWords.includes("есть")||answerWords.includes("где")||answerWords.includes("задача")||answerWords.includes("задание"))
             {
                 console.log("I heard next")
                 return genereteResponceBuffer(true, "storhouseDemo", storehouseTasks())
@@ -112,7 +114,7 @@ var worker = (data)=>{
 
 };
 var storehouseTasks = ()=>{
-    task = ["row 6 shelf 8","row 4 shelf 3","row 3 shelf 2","row 9 shelf 4","row 7 shelf 5","you are smart one"]
+    task = ["row 6 shelf 8","row 4 shelf 3","row 3 shelf 2","row 9 shelf 4","row 7 shelf 5","you are smart"]
     storhouseTaskNumber++;
     if (task.length==storhouseTaskNumber)
     {
