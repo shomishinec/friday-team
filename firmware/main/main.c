@@ -55,6 +55,7 @@ esp_timer_handle_t timer;
 
 // Logic
 TaskHandle_t main_task;
+
 esp_adc_cal_characteristics_t *adc_chars;
 bool isRecording = false;
 bool connectionInProgress = false;
@@ -88,6 +89,20 @@ void initLCD()
     printf("Init LCD");
 }
 
+// init NVS
+
+void initNVS()
+{
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    {
+        // NVS partition was truncated and needs to be erased
+        // Retry nvs_flash_init
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+}
+
 // setup WiFI
 
 esp_err_t wifiEventHandler(void *ctx, system_event_t *event)
@@ -118,14 +133,22 @@ esp_err_t wifiEventHandler(void *ctx, system_event_t *event)
     return ESP_OK;
 }
 
+static void waitForIp()
+{
+    uint32_t bits = IPV4_GOTIP_BIT;
+    printf("Waiting for AP connection...");
+    xEventGroupWaitBits(wifi_event_group, bits, false, true, portMAX_DELAY);
+    printf("Connected to AP");
+}
+
 void initWiFi(void)
 {
-    tcpip_adapter_init();
     wifi_event_group = xEventGroupCreate();
+    tcpip_adapter_init();
     ESP_ERROR_CHECK(esp_event_loop_init(wifiEventHandler, NULL));
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
     wifi_config_t wifi_config = {
         .sta = {
             .ssid = WIFI_SSID,
@@ -209,12 +232,13 @@ void init()
     printf("-----\r\n");
     printf("Init LCD\r\n");
     initLCD();
-    printf("Print to LCD\r\n");
-    printToLCD("Loading");
     printf("Init timer\r\n");
     initTimer();
+    printf("Init NVS\n\r");
+    initNVS();
     printf("Init WiFi\r\n");
     initWiFi();
+    waitForIp();
     printf("Configure pinmodes\r\n");
     gpio_set_direction(BUTTON_GPIO, GPIO_MODE_INPUT);
     printf("Init ADC\r\n");
@@ -227,6 +251,7 @@ void init()
 
 void loop()
 {
+
     vTaskDelay(250);
     if (isRecording)
     {
@@ -238,6 +263,7 @@ void loop()
         sendAudioData();
         return;
     }
+    printf("ReadGpio\r\n");
     if (gpio_get_level(BUTTON_GPIO))
     {
         printToLCD("Recording");
@@ -250,7 +276,7 @@ void loop()
 
 void loopTask(void *pvParameters)
 {
-    init();
+    printf("Start loop\r\n");
     for (;;)
     {
         loop();
@@ -263,7 +289,7 @@ void sendAudioData()
 {
     if (connectionInProgress == false)
     {
-        printf("Send audio data");
+        printf("Send audio data\r\n");
         xTaskCreate(tcpClientTask, "tcp_client", 4096, NULL, 5, NULL);
     }
 }
@@ -387,7 +413,7 @@ void startRecordFromMic()
     const esp_timer_create_args_t timerArgs = {
         .callback = &readMicLoop,
         .name = "micLoopTimer"};
-    timer = esp_timer_create(&timerArgs, timer);
+    esp_timer_create(&timerArgs, &timer);
     esp_timer_start_periodic(timer, (ITONE_CYCLE / CYCLE_DIV) / FREQUNCY);
     // timer = timerBegin(0, CYCLE_DIV, true);
     // timerAttachInterrupt(timer, &readMicLoop, true);
@@ -423,6 +449,7 @@ int16_t readMicRaw()
 void printToLCD(char *message)
 {
     printf(message);
+    printf("\r\n");
 }
 
 // Utils
