@@ -35,17 +35,17 @@ module.exports = (data) => {
         }
         storhouseTaskNumber = 0;
         storehouseDemo = false;
-        return genereteResponceBuffer(true, "startTimer", timeSeconds);
+        return utils.genereteResponceBuffer(true, "startTimer", timeSeconds);
     }
     if (storehouseDemo || answerWords.includes("склад") || answerWords.includes("склада") || answerWords.includes("хранилище") || answerWords.includes("складом")) {
         if (!storehouseDemo) {
             console.log("I heard storhouse demo")
-            return genereteResponceBuffer(true, "storhouseDemo", "task or question");
+            return utils.genereteResponceBuffer(true, "storhouseDemo", "task or question");
         }
         storehouseDemo = true;
         if (answerWords.includes("дальше") || answerWords.includes("следующая") || answerWords.includes("есть") || answerWords.includes("где") || answerWords.includes("задача") || answerWords.includes("задание")) {
             console.log("I heard next")
-            return genereteResponceBuffer(true, "storhouseDemo", storehouseTasks())
+            return utils.genereteResponceBuffer(true, "storhouseDemo", storehouseTasks())
         }
     }
 
