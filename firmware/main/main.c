@@ -75,6 +75,11 @@ int bufferIndex = 0;
 #define I2C_MASTER_RX_BUF_DISABLE 0 /*!< I2C master do not need buffer */
 #define I2C_MASTER_FREQ_HZ 100000   /*!< I2C master clock frequency */
 
+#define CHAR_HEIGHT 18
+#define CHAR_WIDTH 11
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+
 // headers
 
 void readMicLoop();
@@ -290,7 +295,7 @@ void loop()
         sendAudioData();
         return;
     }
-    printf("ReadGpio\r\n");
+    // printf("ReadGpio\r\n");
     if (gpio_get_level(BUTTON_GPIO))
     {
         printToLCD("Recording");
@@ -475,8 +480,12 @@ int16_t readMicRaw()
 
 void printToLCD(char *message)
 {
+    uint8_t length = strlen(message);
+    uint8_t messageWidth = length * CHAR_WIDTH;
+    uint8_t messageHeight = CHAR_HEIGHT;
+    // printf("message width %d, mesage height %d\r\n", messageWidth, messageHeight);
     SSD1306_Fill(SSD1306_COLOR_BLACK);
-    SSD1306_GotoXY(5, 5);
+    SSD1306_GotoXY((SCREEN_WIDTH / 2) - (messageWidth / 2), (SCREEN_HEIGHT / 2) - (messageHeight / 2));
     SSD1306_Puts(message, &Font_11x18, SSD1306_COLOR_WHITE);
     SSD1306_UpdateScreen();
 }
