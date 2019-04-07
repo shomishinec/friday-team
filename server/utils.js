@@ -2,9 +2,9 @@ module.exports.genereteResponceBuffer = (isSuccsess, comandString, value = null)
     let buf = Buffer.alloc(256);
     const comandNumber = ["godMode", "startTimer", "storhouseDemo", "Error"];
     if (isSuccsess) {
-        let buf1 = Buffer.from([comandNumber.findIndex(p => p == comandString)]);
-        let buf2 = Buffer.from("" + value);
-        buf = Buffer.concat([buf1, buf2]);
+       // let buf1 = Buffer.from([comandNumber.findIndex(p => p == comandString)]);
+        //let buf2 = Buffer.from("" + value);
+        buf = Buffer.from("" + value);//Buffer.concat([buf1, buf2]);
     }
     else {
         buf = Buffer.from([comandNumber.findIndex(p => p == comandString)]);
