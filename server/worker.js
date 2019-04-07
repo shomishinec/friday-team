@@ -37,7 +37,7 @@ module.exports = (data) => {
         storehouseDemo = false;
         return utils.genereteResponceBuffer(true, "startTimer", timeSeconds);
     }
-    if (storehouseDemo || answerWords.includes("вклад") || answerWords.includes("вкладa") || answerWords.includes("склад") || answerWords.includes("склада") || answerWords.includes("хранилище") || answerWords.includes("складом")) {
+    if (storehouseDemo || answerWords.includes("вклад") || answerWords.includes("вкладa") || answerWords.includes("склад") || answerWords.includes("склада") || answerWords.includes("хранилище") || answerWords.includes("хранилища") || answerWords.includes("складом")) {
         if (!storehouseDemo) {
             console.log("I heard storhouse demo")
             storehouseDemo = true;
