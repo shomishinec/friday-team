@@ -13,7 +13,7 @@ module.exports = (data) => {
     answerWords = data.result.split(" ");
     if (answerWords.includes("время") || answerWords.includes("таймер")) {
         console.log("I heard time or timer")
-        var timeSeconds = 0;//sending in miliseconds
+        var timeSeconds = 0; //sending in miliseconds
         if (answerWords.includes("установи") || answerWords.includes("поставь") || answerWords.includes("запусти") || answerWords.includes("ждем")) {
             console.log("I heard set")
             if (answerWords.includes("час") || answerWords.includes("часа")) {
@@ -37,22 +37,29 @@ module.exports = (data) => {
         storehouseDemo = false;
         return utils.genereteResponceBuffer(true, "startTimer", timeSeconds);
     }
-    if (storehouseDemo || answerWords.includes("склад") || answerWords.includes("склада") || answerWords.includes("хранилище") || answerWords.includes("складом")) {
+    if (storehouseDemo || answerWords.includes("вклад") || answerWords.includes("вкладa") || answerWords.includes("склад") || answerWords.includes("склада") || answerWords.includes("хранилище") || answerWords.includes("складом")) {
         if (!storehouseDemo) {
             console.log("I heard storhouse demo")
-            return utils.genereteResponceBuffer(true, "storhouseDemo", "task or question");
+            storehouseDemo = true;
+            return utils.genereteResponceBuffer(true, "storhouseDemo", "in store");
         }
         storehouseDemo = true;
         if (answerWords.includes("дальше") || answerWords.includes("следующая") || answerWords.includes("есть") || answerWords.includes("где") || answerWords.includes("задача") || answerWords.includes("задание")) {
             console.log("I heard next")
             return utils.genereteResponceBuffer(true, "storhouseDemo", storehouseTasks())
         }
+        if (answerWords.includes("закончить") || answerWords.includes("хватит") || answerWords.includes("стоп") || answerWords.includes("прекрати")|| answerWords.includes("закончи")) {
+            console.log("I heard stop")
+            storhouseTaskNumber = 0;
+            storehouseDemo = false;
+            return utils.genereteResponceBuffer(true, "storhouseDemo", "finish")
+        }
     }
-
+    return utils.genereteResponceBuffer(true, "storhouseDemo", "try again")
 
 };
 var storehouseTasks = () => {
-    task = ["row 6 shelf 8", "row 4 shelf 3", "row 3 shelf 2", "row 9 shelf 4", "row 7 shelf 5", "you are smart"]
+    task = ["row 6", "shelf 3", "row 3", "shelf 4", "row 7", "finish"]
     storhouseTaskNumber++;
     if (task.length == storhouseTaskNumber) {
         storhouseTaskNumber = 0;

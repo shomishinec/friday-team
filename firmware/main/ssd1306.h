@@ -49,6 +49,8 @@ uint8_t SSD1306_Init(void);
  * @param  None
  * @retval None
  */
+// uint8_t reverseBits(uint8_t num);
+// void SSD1306_UpDateScreenInvert(void);
 void SSD1306_UpdateScreen(void);
 
 /**

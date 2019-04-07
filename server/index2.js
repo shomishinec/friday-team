@@ -1,18 +1,6 @@
 const fs = require("fs");
 const net = require("net");
 
-const DURATION = 3;
-const CHANELS_COUNT = 1;
-
-const INIT_FREQUENCY = 8; // kHz
-const FREQUENCY = 16; // kHz
-
-const INIT_BITRATE = 16; // bit // research way to receive 10 bit signal
-const BITRATE = 16; // bit
-
-const INIT_BYTERATE = INIT_BITRATE / 8; // bit // research way to receive 10 bit signal
-const BYTERATE = BITRATE / 8; // bit // research way to receive 10 bit signal
-
 function increaseFrequency(buffer, frequency, newFrequency, byterate) {
 	const k = newFrequency / frequency;
 	const newBufferLength = buffer.length * k;
