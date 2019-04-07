@@ -13,7 +13,7 @@ module.exports = (data) => {
     answerWords = data.result.split(" ");
     if (answerWords.includes("время") || answerWords.includes("таймер")) {
         console.log("I heard time or timer")
-        var timeSeconds = 0;//sending in miliseconds
+        var timeSeconds = 0; //sending in miliseconds
         if (answerWords.includes("установи") || answerWords.includes("поставь") || answerWords.includes("запусти") || answerWords.includes("ждем")) {
             console.log("I heard set")
             if (answerWords.includes("час") || answerWords.includes("часа")) {
@@ -37,7 +37,7 @@ module.exports = (data) => {
         storehouseDemo = false;
         return utils.genereteResponceBuffer(true, "startTimer", timeSeconds);
     }
-    if (storehouseDemo || answerWords.includes("склад") || answerWords.includes("склада") || answerWords.includes("хранилище") || answerWords.includes("складом")) {
+    if (storehouseDemo || answerWords.includes("вклад") || answerWords.includes("вкладa") || answerWords.includes("склад") || answerWords.includes("склада") || answerWords.includes("хранилище") || answerWords.includes("складом")) {
         if (!storehouseDemo) {
             console.log("I heard storhouse demo")
             return utils.genereteResponceBuffer(true, "storhouseDemo", "task or question");
