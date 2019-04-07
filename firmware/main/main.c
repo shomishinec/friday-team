@@ -66,6 +66,7 @@ bool connectionInProgress = false;
 uint8_t buffer[BUFFER_SIZE];
 int bufferIndex = 0;
 
+char messageText[128] = "";
 // I2C
 
 #define I2C_MASTER_SCL_IO 22        /*!< gpio number for I2C master clock */
@@ -259,6 +260,8 @@ void initLCD()
 
 void init()
 {
+    //char m[256] = "message";
+    //strncpy(messageText, m, strlen(m));
     printf("-----\r\n");
     printf("Init I2C\r\n");
     initI2C();
@@ -300,6 +303,10 @@ void loop()
     {
         printToLCD("Recording");
         startRecordFromMic();
+        return;
+    }
+    if (strlen(messageText) > 0) {
+        printToLCD(messageText);
         return;
     }
     printToLCD("Ready");
@@ -396,7 +403,12 @@ void tcpClientTask(void *pvParameters)
             {
                 rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
                 printf("Received %d bytes from\r\n", len);
-                // printf(rx_buffer);
+                printf("=========payload========\r\n");
+                printf(rx_buffer);
+                printf("\r\n");
+                printf("========================\r\n");
+                strncpy(messageText, rx_buffer, 10);
+                printf(messageText);
 
                 // close(sock);
                 printf("Disconnected from %s:%d\r\n", HOST_IP_ADDR, PORT);
