@@ -39,7 +39,7 @@
 // WiFI
 #define WIFI_SSID "Grandead"
 #define WIFI_PASS "my1te2le3ccascad"
-#define HOST_IP_ADDR "46.101.116.209
+#define HOST_IP_ADDR "46.101.116.209"
 #define PORT 8086
 const int IPV4_GOTIP_BIT = BIT0;
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
