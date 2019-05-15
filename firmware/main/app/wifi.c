@@ -1,5 +1,8 @@
 
 #include "wifi.h"
+// TODO hack
+#include "audio_buffer.h"
+#include "main.h"
 
 EventGroupHandle_t _wifi_event_group_handle;
 uint32_t _wifi_ipv4_got_ip_bit;
@@ -11,12 +14,12 @@ uint16_t _server_port;
 char messageText[128];
 
 void nvs_init(void);
-void wifi_connect(char *wifi_ssid, char *wifi_password);
+void wifi_connect(const char *wifi_ssid, const char *wifi_password);
 void wifi_wait_for_ip(uint32_t wifi_ipv4_got_ip_bit);
 esp_err_t wifi_event_handler(void *ctx, system_event_t *event);
 void wifi_tcp_client_task(void *pvParameters);
 
-char *wifi_init(char *wifi_ssid, char *wifi_password, uint32_t wifi_ipv4_got_ip_bit)
+char *wifi_init(const char *wifi_ssid, const char *wifi_password, uint32_t wifi_ipv4_got_ip_bit)
 {
     printf("Init nvs\n\r");
     nvs_init();
@@ -39,7 +42,7 @@ void nvs_init()
     }
 }
 
-void wifi_connect(char *wifi_ssid, char *wifi_password)
+void wifi_connect(const char *wifi_ssid, const char *wifi_password)
 {
     _wifi_event_group_handle = xEventGroupCreate();
     tcpip_adapter_init();
@@ -49,8 +52,9 @@ void wifi_connect(char *wifi_ssid, char *wifi_password)
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = {wifi_ssid},
-            .password = {wifi_password},
+            // TODO hach
+            .ssid = WIFI_SSID,
+            .password = WIFI_PASSWORD,
         },
     };
     printf("Setting wifi configuration ssid\r\n");
@@ -98,6 +102,8 @@ esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
 
 void wifi_tcp_client_task(void *pvParameters)
 {
+    _connection_in_progress = true;
+
     char rx_buffer[128];
     char addr_str[128];
     int addr_family;
@@ -105,7 +111,7 @@ void wifi_tcp_client_task(void *pvParameters)
 
     struct sockaddr_in destAddr;
     destAddr.sin_addr.s_addr = inet_addr(_server_ip_address);
-    destAddr.sin_family = SOCK_STREAM;
+    destAddr.sin_family = AF_INET;
     destAddr.sin_port = htons(_server_port);
     addr_family = AF_INET;
     ip_protocol = IPPROTO_IP;
@@ -144,7 +150,7 @@ void wifi_tcp_client_task(void *pvParameters)
         {
             if (err < 0)
             {
-                printf("error occured during sending\r\n");
+                printf("Error occured during sending\r\n");
 
                 //ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
                 break;
@@ -163,21 +169,19 @@ void wifi_tcp_client_task(void *pvParameters)
             else
             {
                 rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
-                printf("received %d bytes from\r\n", len);
+                printf("Received %d bytes from\r\n", len);
                 printf("=========payload========\r\n");
                 printf(rx_buffer);
                 printf("\r\n");
                 printf("========================\r\n");
                 strncpy(messageText, rx_buffer, 10);
                 printf(messageText);
-
-                // close(sock);
-                printf("disconnected from %s:%d\r\n", _server_ip_address, _server_port);
+                printf("Disconnected from %s:%d\r\n", _server_ip_address, _server_port);
                 _connection_in_progress = false;
                 //ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
                 //ESP_LOGI(TAG, "%s", rx_buffer);
             }
-            // bufferIndex = 0;
+            audio_buffer_clear();
             vTaskDelay(2000 / portTICK_PERIOD_MS);
         }
 
@@ -201,8 +205,6 @@ void wifi_send_data(uint8_t *buffer, uint16_t buffer_size, char *server_ip_addre
         _buffer_size = buffer_size;
         _server_ip_address = server_ip_address;
         _server_port = server_port;
-        // _server_ip_address = "192.168.1.33";
-        // _server_port = 8086;
         printf("Send audio data\r\n");
         xTaskCreate(wifi_tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
     }

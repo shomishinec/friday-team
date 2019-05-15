@@ -1,7 +1,7 @@
 const https = require("https");
 const net = require('net');
 const querystring = require("querystring");
-const config = require("config");
+const config = require("./config");
 const utils = require("./utils")
 const worker = require("./worker");
 const fileSaver = require("./fileSaver");
@@ -11,9 +11,9 @@ const iam = "CggaATEVAgAAABKABB9mBv8qJkhBC6PXXJSEuJDud3xiHbCZNEWrezJbxsuCWuvEDZA
 const server = net.createServer((socket) => {
     let receiverBytes = 0;
     const lpcmBuffer = Buffer.alloc(48000);
-    const timer = setTimeout(10000, () => {
+    const timer = setTimeout(() => {
         socket.end(utils.genereteResponceBuffer(false, "Error"));
-    })
+    }, 10000)
     socket.on("error", function (err) {
         console.error("Error: " + err);
         clearTimeout(timer);
@@ -59,7 +59,7 @@ const server = net.createServer((socket) => {
             //         var response = JSON.parse(body);
             //         console.log("Got a response: ", response);
             //         // TODO command not recognize
-            //         socket.end(worker(response));
+            socket.end("Done");
             //         receiverBytes = 0;
             //     });
             // });
