@@ -1,6 +1,7 @@
 const https = require("https");
 const net = require('net');
 const querystring = require("querystring");
+const config = require("config");
 const utils = require("./utils")
 const worker = require("./worker");
 const fileSaver = require("./fileSaver");
@@ -10,8 +11,12 @@ const iam = "CggaATEVAgAAABKABB9mBv8qJkhBC6PXXJSEuJDud3xiHbCZNEWrezJbxsuCWuvEDZA
 const server = net.createServer((socket) => {
     let receiverBytes = 0;
     const lpcmBuffer = Buffer.alloc(48000);
+    const timer = setTimeout(10000, () => {
+        socket.end(utils.genereteResponceBuffer(false, "Error"));
+    })
     socket.on("error", function (err) {
         console.error("Error: " + err);
+        clearTimeout(timer);
         socket.end(utils.genereteResponceBuffer(false, "Error"));
     });
     socket.on("data", (lpcmChunk) => {
@@ -20,47 +25,48 @@ const server = net.createServer((socket) => {
         receiverBytes += lpcmChunk.length;
         console.log("Total bytes received: " + receiverBytes);
         if (receiverBytes == 48000) {
+            clearTimeout(timer);
             console.log("Start speech recognizing");
-            // fileSaver.save(lpcmBuffer);
-            const incresedLpcmBuffer = utils.increaseFrequency(lpcmBuffer);
-            const queryString = querystring.stringify({
-                format: "lpcm",
-                sampleRateHertz: "16000",
-                folderId: "b1grc8mj9t0vt1fu9n3c"
-            });
-            const options = {
-                hostname: "stt.api.cloud.yandex.net",
-                path: "/speech/v1/stt:recognize?" + queryString,
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${iam}`,
-                }
-            };
-            const req = https.request(options, (res) => {
-                console.log("statusCode:", res.statusCode);
-                console.log("headers:", res.headers);
-                let body = "";
-                res.on("data", (chunk) => {
-                    console.log("Reseived speech recognizing data");
-                    body += chunk;
-                });
-                req.on("error", (err) => {
-                    socket.end(utils.genereteResponceBuffer(false, "Error"));
-                    console.error("Error: " + err);
-                    receiverBytes = 0;
-                });
-                res.on("end", function () {
-                    var response = JSON.parse(body);
-                    console.log("Got a response: ", response);
-                    // TODO command not recognize
-                    socket.end(worker(response));
-                    receiverBytes = 0;
-                });
-            });
-            req.write(incresedLpcmBuffer);
-            req.end();
+            fileSaver.save(lpcmBuffer);
+            // const incresedLpcmBuffer = utils.increaseFrequency(lpcmBuffer);
+            // const queryString = querystring.stringify({
+            //     format: "lpcm",
+            //     sampleRateHertz: "16000",
+            //     folderId: "b1grc8mj9t0vt1fu9n3c"
+            // });
+            // const options = {
+            //     hostname: "stt.api.cloud.yandex.net",
+            //     path: "/speech/v1/stt:recognize?" + queryString,
+            //     method: "POST",
+            //     headers: {
+            //         "Authorization": `Bearer ${iam}`,
+            //     }
+            // };
+            // const req = https.request(options, (res) => {
+            //     console.log("statusCode:", res.statusCode);
+            //     console.log("headers:", res.headers);
+            //     let body = "";
+            //     res.on("data", (chunk) => {
+            //         console.log("Reseived speech recognizing data");
+            //         body += chunk;
+            //     });
+            //     req.on("error", (err) => {
+            //         socket.end(utils.genereteResponceBuffer(false, "Error"));
+            //         console.error("Error: " + err);
+            //         receiverBytes = 0;
+            //     });
+            //     res.on("end", function () {
+            //         var response = JSON.parse(body);
+            //         console.log("Got a response: ", response);
+            //         // TODO command not recognize
+            //         socket.end(worker(response));
+            //         receiverBytes = 0;
+            //     });
+            // });
+            // req.write(incresedLpcmBuffer);
+            // req.end();
         }
     });
 });
-server.listen(8086, "46.101.116.209");
+server.listen(config.port, config.address);
 console.log("Server started");

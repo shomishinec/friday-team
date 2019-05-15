@@ -1,3 +1,8 @@
 .vscode
 firmware/build
 firmware/sdkconfig
+firmware/sdkconfig.defaults
+firmware/sdkconfig.old
+firmware/main/main.h
+server/*.wav
+server/config.js
