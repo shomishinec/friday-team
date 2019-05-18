@@ -1,9 +1,9 @@
 const fs = require("fs")
-const utils = require("./utils")
+// const utils = require("./utils")
 
 module.exports.save = (buffer) => {
     const fileName = (+ new Date());
-    buffer = utils.increaseFrequency(buffer);
+    // buffer = utils.increaseFrequency(buffer);
     writeFile(fileName, buffer);
 }
 

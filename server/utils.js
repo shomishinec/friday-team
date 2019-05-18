@@ -31,7 +31,7 @@ module.exports.increaseFrequency = (buffer) => {
     return newBuffer;
 }
 
-function readAudioBuffer(buffer, byterate, index) {
+module.exports.readAudioBuffer = (buffer, byterate, index) => {
 	switch (byterate) {
 		case 1:
 			return buffer[index];

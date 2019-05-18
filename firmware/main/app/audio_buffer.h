@@ -3,15 +3,17 @@
 
 #include "esp_types.h"
 
+#define AUDIO_FREQUNCY 16000
+#define AUDIO_DURATION 3
+#define BUFFER_SIZE AUDIO_FREQUNCY *AUDIO_DURATION * 2
+
 typedef struct
 {
     uint8_t *data;
-    uint16_t size;
-    uint16_t index;
+    uint32_t index;
 } audio_buffer_t;
 
-audio_buffer_t *audio_buffer_init(uint16_t bufferSize);
+audio_buffer_t *audio_buffer_init();
 bool audio_buffer_is_full();
 void audio_buffer_set(uint8_t byte);
-audio_buffer_t *audio_buffer_get();
 void audio_buffer_clear();

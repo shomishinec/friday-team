@@ -2,14 +2,13 @@
 
 audio_buffer_t *_audio_buffer;
 
-audio_buffer_t *audio_buffer_init(uint16_t buffer_size)
+audio_buffer_t *audio_buffer_init()
 {
     _audio_buffer = malloc(sizeof(audio_buffer_t));
     if (_audio_buffer != NULL)
     {
-        uint8_t *buffer_data = malloc(buffer_size * sizeof(uint8_t));
+        uint8_t *buffer_data = malloc(BUFFER_SIZE * sizeof(uint8_t));
         _audio_buffer->data = buffer_data;
-        _audio_buffer->size = buffer_size;
         _audio_buffer->index = 0;
     }
     return _audio_buffer;
@@ -17,7 +16,7 @@ audio_buffer_t *audio_buffer_init(uint16_t buffer_size)
 
 bool audio_buffer_is_full()
 {
-    return _audio_buffer->size == _audio_buffer->index;
+    return _audio_buffer->index == BUFFER_SIZE;
 };
 
 void audio_buffer_set(uint8_t byte)
@@ -27,11 +26,6 @@ void audio_buffer_set(uint8_t byte)
         _audio_buffer->data[_audio_buffer->index] = byte;
         _audio_buffer->index++;
     }
-};
-
-audio_buffer_t *audio_buffer_get()
-{
-    return _audio_buffer;
 };
 
 void audio_buffer_clear()

@@ -1,32 +1,28 @@
 
 #include "wifi.h"
+#include "config.h"
 // TODO hack
 #include "audio_buffer.h"
-#include "main.h"
 
 EventGroupHandle_t _wifi_event_group_handle;
-uint32_t _wifi_ipv4_got_ip_bit;
 bool _connection_in_progress = false;
 uint8_t *_buffer;
-uint16_t _buffer_size;
-char *_server_ip_address;
-uint16_t _server_port;
+uint32_t _buffer_size;
 char messageText[128];
 
-void nvs_init(void);
-void wifi_connect(const char *wifi_ssid, const char *wifi_password);
-void wifi_wait_for_ip(uint32_t wifi_ipv4_got_ip_bit);
+void nvs_init();
+void wifi_connect();
+void wifi_wait_for_ip();
 esp_err_t wifi_event_handler(void *ctx, system_event_t *event);
 void wifi_tcp_client_task(void *pvParameters);
 
-char *wifi_init(const char *wifi_ssid, const char *wifi_password, uint32_t wifi_ipv4_got_ip_bit)
+char *wifi_init()
 {
     printf("Init nvs\n\r");
     nvs_init();
     printf("Init wifi\r\n");
-    wifi_connect(wifi_ssid, wifi_password);
-    _wifi_ipv4_got_ip_bit = wifi_ipv4_got_ip_bit;
-    wifi_wait_for_ip(wifi_ipv4_got_ip_bit);
+    wifi_connect();
+    wifi_wait_for_ip();
     return messageText;
 }
 
@@ -42,7 +38,7 @@ void nvs_init()
     }
 }
 
-void wifi_connect(const char *wifi_ssid, const char *wifi_password)
+void wifi_connect()
 {
     _wifi_event_group_handle = xEventGroupCreate();
     tcpip_adapter_init();
@@ -60,15 +56,15 @@ void wifi_connect(const char *wifi_ssid, const char *wifi_password)
     printf("Setting wifi configuration ssid\r\n");
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
-    printf("Connect to WIFI with SSID %s and PASSWORD %s\n\r", wifi_ssid, wifi_password);
+    printf("Connect to WIFI with SSID %s and PASSWORD %s\n\r", WIFI_SSID, WIFI_PASSWORD);
     ESP_ERROR_CHECK(esp_wifi_start());
 };
 
-void wifi_wait_for_ip(uint32_t wifi_ipv4_got_ip_bit)
+void wifi_wait_for_ip()
 {
-    uint32_t bits = wifi_ipv4_got_ip_bit;
+
     printf("Waiting for access point connection...");
-    xEventGroupWaitBits(_wifi_event_group_handle, bits, false, true, portMAX_DELAY);
+    xEventGroupWaitBits(_wifi_event_group_handle, BIT0, false, true, portMAX_DELAY);
     printf("Connected to access point");
 }
 
@@ -85,13 +81,13 @@ esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
         tcpip_adapter_create_ip6_linklocal(TCPIP_ADAPTER_IF_STA);
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
-        xEventGroupSetBits(_wifi_event_group_handle, _wifi_ipv4_got_ip_bit);
+        xEventGroupSetBits(_wifi_event_group_handle, BIT0);
         // ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP");
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
         /* This is a workaround as ESP32 WiFi libs don't currently auto-reassociate. */
         esp_wifi_connect();
-        xEventGroupClearBits(_wifi_event_group_handle, _wifi_ipv4_got_ip_bit);
+        xEventGroupClearBits(_wifi_event_group_handle, BIT0);
         // xEventGroupClearBits(wifi_event_group, IPV6_GOTIP_BIT);
         break;
     default:
@@ -110,9 +106,9 @@ void wifi_tcp_client_task(void *pvParameters)
     int ip_protocol;
 
     struct sockaddr_in destAddr;
-    destAddr.sin_addr.s_addr = inet_addr(_server_ip_address);
+    destAddr.sin_addr.s_addr = inet_addr(SERVER_IP_ADDRESS);
     destAddr.sin_family = AF_INET;
-    destAddr.sin_port = htons(_server_port);
+    destAddr.sin_port = htons(SERVER_PORT);
     addr_family = AF_INET;
     ip_protocol = IPPROTO_IP;
     inet_ntoa_r(destAddr.sin_addr, addr_str, sizeof(addr_str) - 1);
@@ -136,7 +132,7 @@ void wifi_tcp_client_task(void *pvParameters)
         int err = connect(sock, (struct sockaddr *)&destAddr, sizeof(destAddr));
         if (err != 0)
         {
-            printf("Socket unable to connect to %s:%d\n\rError number is %d\r\n", _server_ip_address, _server_port, err);
+            printf("Socket unable to connect to %s:%d\n\rError number is %d\r\n", SERVER_IP_ADDRESS, SERVER_PORT, err);
             // ESP_LOGE(TAG, "Socket unable to connect: errno %d", errno);
             break;
         }
@@ -176,7 +172,7 @@ void wifi_tcp_client_task(void *pvParameters)
                 printf("========================\r\n");
                 strncpy(messageText, rx_buffer, 10);
                 printf(messageText);
-                printf("Disconnected from %s:%d\r\n", _server_ip_address, _server_port);
+                printf("Disconnected from %s:%d\r\n", SERVER_IP_ADDRESS, SERVER_PORT);
                 _connection_in_progress = false;
                 //ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
                 //ESP_LOGI(TAG, "%s", rx_buffer);
@@ -196,15 +192,13 @@ void wifi_tcp_client_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-void wifi_send_data(uint8_t *buffer, uint16_t buffer_size, char *server_ip_address, uint16_t server_port)
+void wifi_send_data(uint8_t *buffer, uint32_t buffer_size)
 {
     if (_connection_in_progress == false)
     {
         _connection_in_progress = true;
         _buffer = buffer;
         _buffer_size = buffer_size;
-        _server_ip_address = server_ip_address;
-        _server_port = server_port;
         printf("Send audio data\r\n");
         xTaskCreate(wifi_tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
     }

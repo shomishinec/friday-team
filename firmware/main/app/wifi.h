@@ -14,5 +14,5 @@
 #include "lwip/sys.h"
 #include <lwip/netdb.h>
 
-char *wifi_init(const char *wifi_ssid, const char *wifi_password, uint32_t wifi_ipv4_got_ip_bit);
-void wifi_send_data(uint8_t *buffer, uint16_t buffer_size, char *server_ip_address, uint16_t server_port);
+char *wifi_init();
+void wifi_send_data(uint8_t *buffer, uint32_t buffer_size);
