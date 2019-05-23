@@ -133,6 +133,7 @@ void _recorder_stop_record()
     timer_pause(TIMER_GROUP, TIMER);
     printf("Timer stop at %lld tick\r\n", _timer_counter);
     printf("Stop recording\r\n");
+    _timer_counter = 0;
     vTaskDelete(_timer_task_handle);
 }
 
@@ -161,10 +162,13 @@ void IRAM_ATTR _timer_isr_handler()
       we need enable it again, so it is triggered the next time */
     TIMERG0.hw_timer[TIMER].config.alarm_en = TIMER_ALARM_EN;
 
-    /* Now just send the event data back to the main program task */
-    xQueueSendFromISR(_timer_queue, &evt, NULL);
+    ++_timer_counter;
 
-    _timer_counter += 1;
+    if (_timer_counter > 7999)
+    {
+        /* Now just send the event data back to the main program task */
+        xQueueSendFromISR(_timer_queue, &evt, NULL);
+    }
 }
 
 void _timer_handler()
@@ -225,8 +229,8 @@ uint16_t recorder_read()
 
 #endif
 #if MULTISAMPLING_COUNT > 1
-    return (((_adc_value / MULTISAMPLING_COUNT)) << 2) + 32768;
+    return ((_adc_value / MULTISAMPLING_COUNT) << 2);
 #else
-    return (_adc_value << 2) + 32768;
+    return (_adc_value + 700) << 2;
 #endif
 }

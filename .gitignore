@@ -3,6 +3,8 @@ firmware/build
 firmware/sdkconfig
 firmware/sdkconfig.defaults
 firmware/sdkconfig.old
-firmware/main/main.h
-server/*.wav
-server/config.js
+firmware/main/config.h
+server/output
+*/config.js
+*/node_modules
+*/package-lock.json

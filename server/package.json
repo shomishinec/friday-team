@@ -1,0 +1,16 @@
+{
+  "name": "friday-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "bmp-js": "^0.1.0",
+    "fft-js": "0.0.12"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "grandead",
+  "license": "ISC"
+}
