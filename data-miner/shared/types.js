@@ -1,6 +1,6 @@
 const types = {
     loginRequest: "loginRequest",
-    logintResponse: "loginResponse",
+    loginResponse: "loginResponse",
     loadDataRequest: "loadDataRequest",
     loadDataResponse: "loadDataReponse",
     setDataRequest: "setDataRequest",
@@ -10,10 +10,8 @@ const types = {
     dataFreeByAnotherUser: "dataFreeByAnotherUser"
 }
 
-if (module && module.exports) {
-    module.exports = types;
-}
-
-if (window) {
+if (typeof window !== "undefined") {
     window.types = types;
+} else {
+    module.exports = types;
 }

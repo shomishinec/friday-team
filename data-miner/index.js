@@ -1,52 +1,22 @@
-const server = require("http").createServer(handler);
-const io = require("socket.io")(server);
+const http = require("http");
+const io = require("socket.io");
 const fs = require("fs");
 const path = require("path");
-const config = require("./config");
-let inMemoryDB = null;
-const sessions = {
-    
-};
-
-// db 
-
-// users: user[]
-// data: item[]
-
-// db user
-
-// login: string
-// password: string
-
-// db item
-
-// id: string
-// duration: string
-// bytesCount: int
-// isBisy: bool
-// spectrogram: string
-// waveGraph: string
-// frames: itemFrame[]
-
-// db itemFrame
-
-// id: string
-// assumptions: itemFrameAssumption[]
-
-// db itemFrameAssumption
-
-// login: string
-// assumption: string
+const config = require("./server/config");
+const types = require("./shared/types");
+const classes = require("./shared/classes");
+const db = require("./server/db");
+const session = require("./server/session")
 
 const handler = (request, response) => {
     console.log("Request starting...");
 
     let filePath = "." + request.url;
     if (filePath == "./")
-        filePath = "./index.html";
+        filePath = "./public/index.html";
 
     const extname = path.extname(filePath);
-    const contentType = "text/html";
+    let contentType = "text/html";
     switch (extname) {
         case ".js":
             contentType = "text/javascript";
@@ -88,42 +58,30 @@ const handler = (request, response) => {
         }
     });
 
-}
+};
 
 const ioHandler = (socket) => {
-    socket.emit("news", { hello: "world" });
-    socket.on("get_data_request", function (meassage) {
-        onGetData(socket, message);
+    // auth
+    socket.on(types.loginRequest, function (dto) {
+        const user = classes.User.fromDto(dto);
+        const db = db.getDB();
+        if (db.users.findIndex(dbUser => dbUser.login === user.login && dbUser.password === user.password) !== -1) {
+            const sessionKey = session.start();
+            socket.emit(types.loginResponse, JSON.stringify(new classes.Response(true, sessionKey)));
+        } else {
+            socket.emit(types.loginResponse, JSON.stringify(new classes.Response(false, null, "user not found")));
+        }
     });
-    socket.on("set_data_request", function (data) {
-        onSetData(socket, message);
+    // load data
+    socket.on(types.loadDataRequest, function (dto) {
+        socket.emit(types.loadDataResponse, JSON.stringify(db.getDB().data));
     });
+};
 
-}
 
-const onGetData = (socket, message) => {
-    const request = JSON.parse(message);
-    if (!inMemoryDB) {
-        loadDB();
-    }
-    socket.emit(inMemoryDB);
-}
-
-const onSetData = (socket, message) => {
-    const request = JSON.parse(message);
-
-}
-
-const loadDB = () => {
-    const json = fs.readFileSync(config.dbFileName);
-    inMemoryDB = JSON.parse(json);
-}
-const ifFilesChanged = () => {
-
-}
-
+const server = http.createServer(handler);
 server.listen(config.port, config.address);
 console.log("Server running");
-io.on("connection", ioHandler); 1
+io(server).on("connection", ioHandler);
 console.log("Web sockets server running");
 console.log(`Browse data-miner http://${config.address}:${config.port}`)

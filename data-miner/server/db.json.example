@@ -1,0 +1,21 @@
+{
+    "users": [
+        {
+            "login": "grandead",
+            "password": "welcome_grandead"
+        },
+        {
+            "login": "stan",
+            "password": "welcome_stan"
+        },
+        {
+            "login": "wolk",
+            "password": "welcome_wolk"
+        },
+        {
+            "login": "alangar",
+            "password": "welcome_alangar"
+        }
+    ],
+    "data": []
+}

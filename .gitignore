@@ -5,6 +5,7 @@ firmware/sdkconfig.defaults
 firmware/sdkconfig.old
 firmware/main/config.h
 server/output
-*/config.js
-*/node_modules
-*/package-lock.json
+data-miner/server/db.json
+*/**/config.js
+*/**/node_modules
+*/**/package-lock.json
