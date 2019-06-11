@@ -1,5 +1,6 @@
 module.exports = {
     address: 127.0.0.1,
     port: 8888,
-    dbFileName: "db.json"
+    dbFileName: "./server/db.json",
+    sessionExpirationTimeout: 1000 * 60 * 15, // 15 minutes 
 }

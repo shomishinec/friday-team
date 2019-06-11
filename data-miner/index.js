@@ -63,21 +63,38 @@ const handler = (request, response) => {
 const ioHandler = (socket) => {
     // auth
     socket.on(types.loginRequest, function (dto) {
-        const user = classes.User.fromDto(dto);
-        const db = db.getDB();
-        if (db.users.findIndex(dbUser => dbUser.login === user.login && dbUser.password === user.password) !== -1) {
-            const sessionKey = session.start();
-            socket.emit(types.loginResponse, JSON.stringify(new classes.Response(true, sessionKey)));
+        const user = parse(dto, classes.User).data;
+        const users = db.getDB().users;
+        if (users.findIndex(dbUser => dbUser.login === user.login && dbUser.password === user.password) !== -1) {
+            const sessionKey = session.start(user.login);
+            socket.emit(types.loginResponse, ok(new classes.Auth(user.login, sessionKey)));
         } else {
-            socket.emit(types.loginResponse, JSON.stringify(new classes.Response(false, null, "user not found")));
+            socket.emit(types.loginResponse, err("user not found"));
         }
     });
     // load data
     socket.on(types.loadDataRequest, function (dto) {
-        socket.emit(types.loadDataResponse, JSON.stringify(db.getDB().data));
+        const auth = parse(dto).auth;
+        const dataItems = db.getDB().dataItems;
+        if (session.check(auth)) {
+            socket.emit(types.loadDataResponse, ok(dataItems));
+        } else {
+            socket.emit(types.loadDataResponse, err("user unauthorize"));
+        }
     });
 };
 
+const parse = (dto, Class) => {
+    return classes.Request.fromDto(dto, Class ? Class.fromDto : null);
+}
+
+const ok = (data) => {
+    return JSON.stringify(new classes.Response(true, data));
+};
+
+const err = (error) => {
+    return JSON.stringify(new classes.Response(false, null, error));
+};
 
 const server = http.createServer(handler);
 server.listen(config.port, config.address);

@@ -1,13 +1,25 @@
 const Classes = {};
 
+Classes.Auth = class Auth {
+    constructor(login, key) {
+        this.login = login || "";
+        this.key = key || "";
+    }
+
+    static fromDto(dto) {
+        dto = dto || {};
+        return new Classes.Auth(dto.login, dto.key)
+    }
+}
+
 Classes.Request = class Request {
-    constructor(key, data) {
-        this.key = key;
+    constructor(auth, data) {
+        this.auth = auth;
         this.data = data;
     }
     static fromDto(dto, map) {
         dto = dto || {};
-        return new Classes.Request(dto.key, map ? typeof dto.data === "Array" ? dto.data.map(map) : map(dto) : null);
+        return new Classes.Request(dto.auth, map && dto.data ? Array.isArray(dto.data) ? dto.data.map(map) : map(dto.data) : null);
     }
 }
 
@@ -20,7 +32,7 @@ Classes.Response = class Response {
 
     static fromDto(dto, map) {
         dto = dto || {};
-        return new Classes.Response(dto.isSuccess, map ? typeof dto.data === "Array" ? dto.data.map(map) : map(dto) : null, dto.error);
+        return new Classes.Response(dto.isSuccess, map && dto.data ? Array.isArray(dto.data) ? dto.data.map(map) : map(dto.data) : null, dto.error);
     }
 }
 
