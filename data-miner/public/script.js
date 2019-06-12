@@ -1,6 +1,6 @@
 
 $(function () {
-    this.db = ko.observableArray();
+    dataItems = ko.observableArray();
 
     ko.components.register("login-form", {
         viewModel: function (params) {
@@ -56,7 +56,7 @@ $(function () {
         socket.emit(window.types.loadDataRequest, req(auth));
     });
     socket.on(window.types.loadDataResponse, (dto) => {
-        const data = parse(dto, classes.DataItem).data;
+        dataItems(parse(dto, classes.DataItem).data)
     });
 });
 

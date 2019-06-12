@@ -73,19 +73,17 @@ Classes.DataItemFrame = class DataItemFrame {
 }
 
 Classes.DataItem = class DataItem {
-    constructor(id, duration, bytesCount, isBisy, spectrogramUrl, waveGraphUrl, frames) {
+    constructor(id, duration, bytesCount, isBisy, frames) {
         this.id = id || 0;
         this.duration = duration || 0;
         this.bytesCount = bytesCount || 0;
         this.isBisy = isBisy || false;
-        this.spectrogramUrl = spectrogramUrl || "";
-        this.waveGraphUrl = waveGraphUrl || "";
         this.frames = frames || [];
     }
 
     static fromDto(dto) {
         dto = dto || {};
-        return new Classes.DataItem(dto.id, dto.duration, dto.bytesCount, dto.isBisy, dto.spectrogramUrl, dto.waveGraphUrl, dto.frames ? dto.frames.map(Classes.DataItemFrame.fromDto) : null)
+        return new Classes.DataItem(dto.id, dto.duration, dto.bytesCount, dto.isBisy, dto.frames ? dto.frames.map(Classes.DataItemFrame.fromDto) : null)
     }
 }
 
