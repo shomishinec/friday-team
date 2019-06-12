@@ -5,9 +5,11 @@ const types = {
     loadDataResponse: "loadDataReponse",
     setDataRequest: "setDataRequest",
     setDataResponse: "setDataResponse",
-    datalockedByAnotherUser: "datalockedByAnotherUser",
+    lockDataRequest: "lockDataRequest",
+    lockDataResponse: "lockDataResponse",
+    dataLocked: "dataLocked",
+    dataFree: "dataFree",
     dataHasModified: "dataHasModified",
-    dataFreeByAnotherUser: "dataFreeByAnotherUser"
 }
 
 if (typeof window !== "undefined") {

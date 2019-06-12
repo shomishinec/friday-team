@@ -73,17 +73,16 @@ Classes.DataItemFrame = class DataItemFrame {
 }
 
 Classes.DataItem = class DataItem {
-    constructor(id, duration, bytesCount, isBisy, frames) {
+    constructor(id, locked, lockedBy, frames) {
         this.id = id || 0;
-        this.duration = duration || 0;
-        this.bytesCount = bytesCount || 0;
-        this.isBisy = isBisy || false;
+        this.locked = locked || false;
+        this.lockedBy = lockedBy || null;
         this.frames = frames || [];
     }
 
     static fromDto(dto) {
         dto = dto || {};
-        return new Classes.DataItem(dto.id, dto.duration, dto.bytesCount, dto.isBisy, dto.frames ? dto.frames.map(Classes.DataItemFrame.fromDto) : null)
+        return new Classes.DataItem(dto.id, dto.locked, dto.lockedBy, dto.frames ? dto.frames.map(Classes.DataItemFrame.fromDto) : null)
     }
 }
 
