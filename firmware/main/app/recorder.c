@@ -151,7 +151,8 @@ void IRAM_ATTR _timer_isr_handler()
 
     ++_timer_counter;
 
-    if (_timer_counter > 7999)
+    // skip first half second
+    if (_timer_counter > AUDIO_FREQUNCY / 2 - 1)
     {
         /* Now just send the event data back to the main program task */
         xQueueSendFromISR(_timer_queue, &_timer_counter, 0);

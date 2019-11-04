@@ -177,5 +177,5 @@ void wifi_send_data(audio_buffer_t *audio_buffer)
     }
     _connection_in_progress = true;
     ESP_LOGI(_TAG_WIFI, "send audio data");
-    xTaskCreate(_wifi_tcp_client_task, "wifi_tcp_client_task", 4096, NULL, 2, NULL);
+    xTaskCreatePinnedToCore(_wifi_tcp_client_task, "wifi_tcp_client_task", 4096, NULL, 2, NULL, 0);
 }
