@@ -1,8 +1,10 @@
 #include "audio_buffer.h"
 
+// -- private properties
 audio_buffer_t *_audio_buffer;
 
-audio_buffer_t *audio_buffer_init()
+// -- body
+void audio_buffer_init()
 {
     _audio_buffer = malloc(sizeof(audio_buffer_t));
     if (_audio_buffer != NULL)
@@ -11,6 +13,10 @@ audio_buffer_t *audio_buffer_init()
         _audio_buffer->data = buffer_data;
         _audio_buffer->index = 0;
     }
+};
+
+audio_buffer_t *audio_buffer_get()
+{
     return _audio_buffer;
 };
 

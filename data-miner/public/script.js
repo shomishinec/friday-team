@@ -50,6 +50,7 @@ $(function () {
 
     const socket = io();
 
+    // tests
     socket.emit(window.types.loginRequest, req(null, new classes.User("grandead", "welcome_grandead")));
     socket.on(window.types.loginResponse, (dto) => {
         const auth = parse(dto, classes.Auth).data;

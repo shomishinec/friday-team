@@ -7,7 +7,6 @@ const server = net.createServer((socket) => {
     const lpcmBuffer = Buffer.alloc(32000 * 3);
     socket.on("error", function (err) {
         console.error("Error: " + err);
-        socket.end(utils.genereteResponceBuffer(false, "Error"));
     });
     socket.on("data", (lpcmChunk) => {
         console.log("Received chunk");
